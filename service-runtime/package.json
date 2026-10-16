@@ -1,0 +1,17 @@
+{
+  "name": "sinton-desktop-service-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "undici": "8.12.2",
+    "webtorrent": "3.0.21"
+  },
+  "overrides": {
+    "ip": "file:vendor/ip-address-codec",
+    "node-datachannel": "0.33.4"
+  }
+}

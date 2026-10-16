@@ -1,0 +1,7 @@
+{
+  "name": "@sinton/ip-address-codec",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "license": "UNLICENSED"
+}

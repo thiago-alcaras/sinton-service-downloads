@@ -1,0 +1,89 @@
+{
+  "name": "sinton-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicativo desktop do Sinton para Windows e macOS",
+  "author": "Sinton",
+  "license": "UNLICENSED",
+  "main": "main.cjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "assets": "python scripts/make-icons.py",
+    "prepare:service": "node scripts/prepare-service.mjs ../sinton-tv",
+    "build:win": "npm run assets && npm run prepare:service && electron-builder --win nsis --x64 --publish never",
+    "build:mac": "npm run assets && npm run prepare:service && electron-builder --mac dmg --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.8.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "tv.sinton.desktop",
+    "productName": "Sinton",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json",
+      "assets/sinton.png",
+      "assets/sinton.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "build-resources/sinton-service",
+        "to": "sinton-service",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "assets/sinton.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Sinton-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sinton"
+    },
+    "mac": {
+      "icon": "assets/sinton.icns",
+      "target": [
+        {
+          "target": "dmg"
+        }
+      ],
+      "category": "public.app-category.entertainment",
+      "identity": null,
+      "artifactName": "Sinton-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "LSApplicationCategoryType": "public.app-category.entertainment",
+        "NSLocalNetworkUsageDescription": "O Sinton usa o serviço local neste computador para buscar fontes e reproduzir vídeos."
+      }
+    },
+    "dmg": {
+      "sign": false,
+      "title": "Sinton ${version}"
+    }
+  },
+  "repository": {
+    "url": "https://github.com/thiago-alcaras/sinton-service-downloads.git",
+    "type": "git"
+  }
+}

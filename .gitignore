@@ -1,0 +1,10 @@
+node_modules/
+release/
+build-resources/
+assets/*.ico
+assets/*.icns
+assets/*.iconset/
+service-runtime/node_modules/
+.venv/
+.tools/
+.DS_Store
