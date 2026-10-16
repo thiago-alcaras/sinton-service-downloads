@@ -14,12 +14,13 @@ Requer Node.js 24 ou superior e Python com Pillow para gerar os ícones.
 
 ```sh
 npm ci
-npm ci --prefix service-runtime
-git clone https://github.com/thiago-alcaras/sinton-tv.git ../sinton-tv
+Push-Location service-runtime
+npm ci
+Pop-Location
 npm run build:win
 ```
 
-Em macOS, `npm run build:mac` produz um pacote para a arquitetura do Mac atual. As releases oficiais incluem builds Intel e Apple Silicon. A compilação usa o serviço atual de `sinton-tv`, mas não modifica nem publica o site.
+Em macOS, `npm run build:mac` produz um pacote para a arquitetura do Mac atual. As releases oficiais incluem builds Intel e Apple Silicon. O app inclui os módulos mínimos do Serviço Sinton e não altera o site.
 
 ## Publicar uma versão
 

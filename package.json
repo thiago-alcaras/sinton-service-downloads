@@ -1,6 +1,6 @@
 {
   "name": "sinton-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Aplicativo desktop do Sinton para Windows e macOS",
   "author": "Sinton",
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "assets": "python scripts/make-icons.py",
-    "prepare:service": "node scripts/prepare-service.mjs ../sinton-tv",
+    "prepare:service": "node scripts/prepare-service.mjs ./vendor/sinton-service",
     "build:win": "npm run assets && npm run prepare:service && electron-builder --win nsis --x64 --publish never",
     "build:mac": "npm run assets && npm run prepare:service && electron-builder --mac dmg --publish never"
   },

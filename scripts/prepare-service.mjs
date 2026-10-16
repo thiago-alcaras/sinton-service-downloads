@@ -3,11 +3,11 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const source = resolve(process.argv[2] || '../sinton-tv');
+const source = resolve(process.argv[2] || './vendor/sinton-service');
 const destination = resolve(project, 'build-resources', 'sinton-service');
 const allowed = resolve(project, 'build-resources') + sep;
 if (!destination.startsWith(allowed)) throw new Error('Invalid service staging path.');
-if (!(await stat(join(source, 'server', 'local-service.js'))).isFile()) throw new Error('Sinton Web checkout is missing its local service.');
+if (!(await stat(join(source, 'server', 'local-service.js'))).isFile()) throw new Error('Bundled Sinton Service sources are missing.');
 if (!(await stat(join(project, 'service-runtime', 'node_modules'))).isDirectory()) throw new Error('Run npm ci --prefix service-runtime before preparing the service.');
 
 await rm(destination, { recursive: true, force: true });
