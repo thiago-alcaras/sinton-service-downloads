@@ -22,12 +22,24 @@ export function resourceURL(base, resource, type, id, extra = {}) {
     (Object.keys(extra).length ? '/' + Object.entries(extra).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&') : '') + '.json';
   return url;
 }
-export async function fetchJSON(url, timeout = 12000) {
+export async function fetchJSON(url, timeout = 12000, { retryWithoutOriginOnForbidden = false } = {}) {
   let res;
   const headers = { Accept: 'application/json' };
   const addonOrigin = networkContext.getStore()?.addonOrigin;
   if (addonOrigin) headers.Origin = addonOrigin;
-  try { res = await safeFetch(url, { signal: AbortSignal.timeout(timeout), headers }); }
+  try {
+    res = await safeFetch(url, { signal: AbortSignal.timeout(timeout), headers });
+    // Manifest endpoints are public metadata. Some addons reject the hosted
+    // Sinton page's Origin even though the same public manifest works locally.
+    // Retry that one read without the browser-origin header; keep the normal
+    // origin behavior for catalog, stream, subtitle, and media requests.
+    if (retryWithoutOriginOnForbidden && res.status === 403 && addonOrigin) {
+      await res.body?.cancel();
+      const manifestHeaders = { ...headers };
+      delete manifestHeaders.Origin;
+      res = await safeFetch(url, { signal: AbortSignal.timeout(timeout), headers: manifestHeaders });
+    }
+  }
   catch { throw new ServiceError('Sem resposta do addon. Verifique a conexão e tente novamente.', 502); }
   if (!res.ok) {
     await res.body?.cancel();
@@ -42,7 +54,7 @@ export async function loadAddon(value) {
   const url = manifestURL(typeof value === 'string' ? value : value.url).href;
   let cached = manifests.get(url);
   if (!cached || cached.until < Date.now()) {
-    const manifest = await fetchJSON(url);
+    const manifest = await fetchJSON(url, 12000, { retryWithoutOriginOnForbidden: true });
     if (!manifest.id || !manifest.name || !Array.isArray(manifest.resources)) throw new ServiceError('Este manifest não descreve um addon compatível.');
     cached = { manifest, until: Date.now() + 300000 }; manifests.set(url, cached);
     if (manifests.size > 200) manifests.delete(manifests.keys().next().value);
