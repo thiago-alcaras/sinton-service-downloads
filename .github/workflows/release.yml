@@ -28,11 +28,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: thiago-alcaras/sinton-tv
-          path: sinton-tv
-          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -50,7 +45,7 @@ jobs:
       - name: Prepare service and icons
         run: |
           npm run assets
-          node scripts/prepare-service.mjs ./sinton-tv
+          node scripts/prepare-service.mjs ./vendor/sinton-service
       - name: Build Windows installer
         if: matrix.platform == 'win'
         run: npx electron-builder --win nsis --x64 --publish never
