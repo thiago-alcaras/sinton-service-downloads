@@ -97,7 +97,7 @@ export function isDubbedOnly(stream) {
 export function is4KStream(stream) {
   const label = `${stream.name || ''} ${stream.title || ''} ${stream.description || ''} ${stream.quality || ''} ${stream.resolution || ''} ${stream.videoQuality || ''}`;
   const declaredHeight = Number(stream.height || stream.resolutionHeight || 0);
-  return /\b4k\b|\b2160(?:p)?\b|\buhd\b|ultra[\s._-]?hd/i.test(label) || declaredHeight >= 2160;
+  return /\b4k\b|\b2160(?:p)?\b/i.test(label) || declaredHeight >= 2160;
 }
 function reportedSeeders(stream) {
   const textValue = String(stream.title || '').match(/👤\s*([\d.,]+)/)?.[1]?.replace(/[.,]/g, '');
@@ -126,7 +126,7 @@ export function canonicalID(meta) {
   const values = [meta.imdb_id, meta.imdbId, meta.id, ...(meta.links || []).map(x => x.url)];
   return values.map(x => String(x || '').match(/tt\d+/)?.[0]).find(Boolean) || meta.id;
 }
-export async function findStreams(addons, item, preference, language='pt-BR', sourceOrder=null) {
+export async function findStreams(addons, item, preference, language='pt-BR', sourceOrder=null, allowAllQualities=false) {
   const diagnostics = []; let id = item.videoId || item.id;
   if (!id.startsWith('tt')) {
     for (const addon of addons.filter(a => supports(a, 'meta', item.type, item.id))) {
@@ -150,9 +150,9 @@ export async function findStreams(addons, item, preference, language='pt-BR', so
   }))).flat();
   if (!eligible.length) diagnostics.push('Nenhum addon de fontes aceita o tipo e o identificador deste programa.');
   const discovered = result.flat();
-  const fourKCount = discovered.filter(is4KStream).length;
+  const fourKCount = allowAllQualities ? 0 : discovered.filter(is4KStream).length;
   if (fourKCount) diagnostics.push(`${fourKCount} fonte(s) 4K ignorada(s); priorizando até 1080p.`);
-  const streams = discovered.filter(s => !is4KStream(s) && (preference !== 'subtitled' || isPortuguese(item.originalLanguage) || !isDubbedOnly(s))).map(s => ({ ...s, subtitles: [...(s.subtitles || []), ...subtitles].sort((a,b)=>subtitlePriority(b,language)-subtitlePriority(a,language)).slice(0, 40) }));
+  const streams = discovered.filter(s => (allowAllQualities || !is4KStream(s)) && (preference !== 'subtitled' || isPortuguese(item.originalLanguage) || !isDubbedOnly(s))).map(s => ({ ...s, subtitles: [...(s.subtitles || []), ...subtitles].sort((a,b)=>subtitlePriority(b,language)-subtitlePriority(a,language)).slice(0, 40) }));
   if (preference === 'subtitled' && !streams.length && result.flat().length) diagnostics.push('As fontes retornadas indicam apenas áudio dublado. O modo legendado precisa de áudio original.');
   const playable = playableSources(streams.sort((a, b) => rankStream(b, preference,sourceOrder) - rankStream(a, preference,sourceOrder)));
   return { ...playable, diagnostics: [...diagnostics, ...playable.diagnostics] };

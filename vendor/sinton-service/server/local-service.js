@@ -96,7 +96,7 @@ async function route(path, data, req, res) {
   }
   if (path === '/streams') {
     if (!data.item?.id || !data.item?.type) throw new ServiceError('Programa inválido.');
-    const result = await findStreams(addons, data.item, data.preference, data.language);
+    const result = await findStreams(addons, data.item, data.preference, data.language, data.sourceOrder, data.allowAllQualities === true);
     return json(res, { ...result, diagnostics: [...diagnostics, ...result.diagnostics] });
   }
   throw new ServiceError('Não encontrado.', 404);
