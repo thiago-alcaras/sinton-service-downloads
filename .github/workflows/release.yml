@@ -32,6 +32,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Set app version from release tag
+        run: node scripts/set-version-from-tag.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

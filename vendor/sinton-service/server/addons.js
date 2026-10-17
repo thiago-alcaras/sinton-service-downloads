@@ -43,7 +43,11 @@ export async function fetchJSON(url, timeout = 12000, { retryWithoutOriginOnForb
   catch { throw new ServiceError('Sem resposta do addon. Verifique a conexão e tente novamente.', 502); }
   if (!res.ok) {
     await res.body?.cancel();
-    const explanation = { 401: 'Configuração não autorizada. Gere um novo manifest.', 403: 'O addon recusou a conexão (HTTP 403). Pode ser configuração ou restrição de acesso ao servidor.', 404: 'Recurso não encontrado no addon.', 429: 'O addon limitou as consultas. Aguarde um pouco.' };
+    const source = networkContext.getStore()?.requestSource;
+    const forbidden = source === 'local'
+      ? 'O addon recusou a conexão do Serviço Sinton local (HTTP 403). O próprio addon está limitando esse acesso.'
+      : 'O addon recusou a conexão (HTTP 403). Pode ser configuração ou restrição de acesso ao servidor.';
+    const explanation = { 401: 'Configuração não autorizada. Gere um novo manifest.', 403: forbidden, 404: 'Recurso não encontrado no addon.', 429: 'O addon limitou as consultas. Aguarde um pouco.' };
     throw new ServiceError(explanation[res.status] || `O addon respondeu HTTP ${res.status}.`, 502);
   }
   const reader = res.body.getReader(); let size = 0; const chunks = [];

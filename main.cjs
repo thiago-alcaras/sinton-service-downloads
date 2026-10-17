@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
+const { appendFileSync, mkdirSync } = fs;
 const { autoUpdater } = require('electron-updater');
 
 const SITE_URL = 'https://sinton-tv.onrender.com/';
@@ -31,13 +32,7 @@ async function start() {
 
   try { await ensureService(); }
   catch (error) {
-    await dialog.showMessageBox({
-      type: 'warning',
-      title: 'Serviço Sinton',
-      message: 'O serviço local não iniciou.',
-      detail: `${error.message || 'Não foi possível iniciar o serviço de reprodução.'}\n\nO Sinton vai abrir normalmente, mas a reprodução local pode ficar indisponível. Nenhum outro processo será encerrado.`,
-      buttons: ['Continuar'],
-    });
+    logService(`Falha ao iniciar: ${error.stack || error.message || error}`);
   }
 
   mainWindow = new BrowserWindow({
@@ -112,13 +107,15 @@ async function ensureService() {
   serviceProcess = spawn(runtime, [entry], {
     cwd: serviceRoot,
     windowsHide: true,
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, NODE_ENV: 'production', ENABLE_TORRENTS: 'true', SINTON_SERVICE_PORT: '11472', SINTON_ALLOWED_ORIGINS: SITE_ORIGIN },
   });
   serviceOwned = true;
   serviceStartError = undefined;
-  serviceProcess.once('error', error => { serviceStartError = error; serviceProcess = undefined; });
-  serviceProcess.once('exit', (code, signal) => { if (code && !serviceStartError) serviceStartError = new Error(`O serviço foi encerrado durante a inicialização (código ${code}${signal ? `, ${signal}` : ''}).`); serviceProcess = undefined; });
+  serviceProcess.stdout.on('data', chunk => logService(chunk));
+  serviceProcess.stderr.on('data', chunk => logService(chunk));
+  serviceProcess.once('error', error => { serviceStartError = error; logService(`Erro ao executar o processo: ${error.stack || error}`); serviceProcess = undefined; });
+  serviceProcess.once('exit', (code, signal) => { if (code && !serviceStartError) serviceStartError = new Error(`O serviço foi encerrado durante a inicialização (código ${code}${signal ? `, ${signal}` : ''}).`); if (code) logService(serviceStartError.message); serviceProcess = undefined; });
   for (let attempt = 0; attempt < 50; attempt++) {
     if (!serviceProcess || serviceProcess.exitCode !== null) break;
     try { await serviceHealth(); return; } catch {}
@@ -137,6 +134,16 @@ async function ensureService() {
     }
     if (serviceStartError) throw new Error(`O processo do serviço não pôde iniciar: ${serviceStartError.message}`);
     throw new Error(`O serviço não respondeu em 10 segundos na porta 11472 (${error.message}).`);
+  }
+}
+
+function logService(message) {
+  try {
+    const directory = app.getPath('userData');
+    mkdirSync(directory, { recursive: true });
+    appendFileSync(path.join(directory, 'service.log'), `[${new Date().toISOString()}] ${String(message).trim()}\n`);
+  } catch (error) {
+    console.warn('Não foi possível registrar o serviço local:', error.message);
   }
 }
 

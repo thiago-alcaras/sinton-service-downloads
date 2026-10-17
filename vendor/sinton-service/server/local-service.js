@@ -131,7 +131,7 @@ const server = createServer(async (req, res) => {
     if (path === '/channels' && req.method === 'GET') return await route(path, {}, req, res);
     if (req.method !== 'POST') throw new ServiceError('Método não permitido.', 405);
     const data = await readBody(req);
-    return await networkContext.run({ addonOrigin: origin }, () => route(path, data, req, res));
+    return await networkContext.run({ addonOrigin: origin, requestSource: 'local' }, () => route(path, data, req, res));
   } catch (error) {
     if (res.headersSent) return res.destroy();
     return json(res, { error: error instanceof Error ? error.message : 'Não foi possível concluir a operação.' }, error instanceof ServiceError ? error.status : 500);
